@@ -1,29 +1,11 @@
 #!/usr/bin/env python
 #
-# Copyright 2010 Facebook
+# changed from facebook to be used for OEmbed of facebook photos, videos, pages, profiles, events, notes and so on
 #
-# Licensed under the Apache License, Version 2.0 (the "License"); you may
-# not use this file except in compliance with the License. You may obtain
-# a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-# License for the specific language governing permissions and limitations
-# under the License.
 
 """Python client library for the Facebook Platform.
 
-This client library is designed to support the Graph API and the official
-Facebook JavaScript SDK, which is the canonical way to implement
-Facebook authentication. Read more about the Graph API at
-http://developers.facebook.com/docs/api. You can download the Facebook
-JavaScript SDK at http://github.com/facebook/connect-js/.
-
-If your application is using Google AppEngine's webapp framework, your
-usage of this module might look like this:
+google app usage of this module might look like this:
 
     user = facebook.get_user_from_cookie(self.request.cookies, key, secret)
     if user:
@@ -32,25 +14,10 @@ usage of this module might look like this:
         friends = graph.get_connections("me", "friends")
 
 """
-
-import cgi
 import hashlib
 import time
 import urllib
-
-# Find a JSON parser
-try:
-    import json
-    _parse_json = lambda s: json.loads(s)
-except ImportError:
-    try:
-        import simplejson
-        _parse_json = lambda s: simplejson.loads(s)
-    except ImportError:
-        # For Google AppEngine
-        from django.utils import simplejson
-        _parse_json = lambda s: simplejson.loads(s)
-
+import json
 
 class GraphAPI(object):
     """A client for the Facebook Graph API.
@@ -75,10 +42,6 @@ class GraphAPI(object):
     You can obtain an access token via OAuth or by using the Facebook
     JavaScript SDK. See http://developers.facebook.com/docs/authentication/
     for details.
-
-    If you are using the JavaScript SDK, you can use the
-    get_user_from_cookie() method below to get the OAuth access token
-    for the active user from the cookie saved by the SDK.
     """
     def __init__(self, access_token=None):
         self.access_token = access_token
@@ -186,29 +149,3 @@ class GraphAPIError(Exception):
         self.type = type
 
 
-def get_user_from_cookie(cookies, app_id, app_secret):
-    """Parses the cookie set by the official Facebook JavaScript SDK.
-
-    cookies should be a dictionary-like object mapping cookie names to
-    cookie values.
-
-    If the user is logged in via Facebook, we return a dictionary with the
-    keys "uid" and "access_token". The former is the user's Facebook ID,
-    and the latter can be used to make authenticated requests to the Graph API.
-    If the user is not logged in, we return None.
-
-    Download the official Facebook JavaScript SDK at
-    http://github.com/facebook/connect-js/. Read more about Facebook
-    authentication at http://developers.facebook.com/docs/authentication/.
-    """
-    cookie = cookies.get("fbs_" + app_id, "")
-    if not cookie: return None
-    args = dict((k, v[-1]) for k, v in cgi.parse_qs(cookie.strip('"')).items())
-    payload = "".join(k + "=" + args[k] for k in sorted(args.keys())
-                      if k != "sig")
-    sig = hashlib.md5(payload + app_secret).hexdigest()
-    expires = int(args["expires"])
-    if sig == args.get("sig") and (expires == 0 or time.time() < expires):
-        return args
-    else:
-        return None
